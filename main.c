@@ -84,13 +84,15 @@ int main(int argc, char *argv[])
     int *woOpenMp = malloc(mSize * mSize * sizeof(int));
     int *wOpenMp = malloc(mSize * mSize * sizeof(int));
     
-    int num = 1;
+    srand(time(null));
+    int num = rand();
     int i, j;
     for (i = 0; i < mSize; i++) {
         for (j = 0; j < mSize; j++) {
             pAMatrix[i * mSize + j] = num;
+            num = rand();
             pBMatrix[i * mSize + j] = num;
-            num++;
+            num = rand();
             woOpenMp[i * mSize + j] = 0;
             wOpenMp[i * mSize + j] = 0;
         }
