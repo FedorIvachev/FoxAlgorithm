@@ -24,8 +24,6 @@ void BlockMult(int **a, int **b, int **c, int size);
 
 void FoxCalculation(int Size, int **a, int **b, int **c);
 
-int** TestSingleThread();
-
 void VecToMatrix(int *Buff, int **a, int size);
 
 void MatrixToVec(int *Buff, int **a, int size);
@@ -37,7 +35,7 @@ int main(int argc, char *argv[]) {
     int **CurA;
     int **CurB; 
     int **CurC;
-    clock_t b, e;
+    double b, e;
 
     MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &ProcNum);
@@ -76,9 +74,9 @@ int main(int argc, char *argv[]) {
     }
 
     MPI_Barrier(GridComm);
-    
+
     if (ProcRank == 0){
-        b = clock();
+        b = MPI_Wtime();
     }
 
     FoxCalculation(SZ, CurA, CurB, CurC);
@@ -87,8 +85,8 @@ int main(int argc, char *argv[]) {
 
     if (ProcRank == 0)
     {
-        e = clock();
-        std::cout << double(e-b)/CLOCKS_PER_SEC << std::endl;
+        e = MPI_Wtime();
+        std::cout << e-b << std::endl;
     }
 
     int *VecC = new int[SZ * SZ];
@@ -111,13 +109,9 @@ int main(int argc, char *argv[]) {
                 }
             }
         }
-
-
-
     }
-
     MPI_Finalize();
-    exit(0);
+    return 0;
 }   
 
 void CreateGridComm() {
@@ -149,7 +143,6 @@ void FoxCalculation(int Size, int **a, int **b, int **c) {
 
     PrevProcess = (GridCoords[0] + 1) % GridSize;
     NextProcess = (GridCoords[0] + GridSize - 1) % GridSize;
-
 
     // init of Buff
     Buff = new int[BlockSize * BlockSize];
