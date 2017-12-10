@@ -1,8 +1,8 @@
 #include <iostream>
-#include<stdlib.h>
+#include <stdlib.h>
+#include <mpi.h>
 #include <ctime>
-#include<math.h>
-#include"mpi.h"
+#include <math.h>
 
 #define SZ 16
 
@@ -16,21 +16,6 @@ int GridCoords[2];
 MPI_Comm GridComm;
 MPI_Comm ColComm;
 MPI_Comm RowComm;
-
-
-void PrintMatrix(int **matrix, int size) {
-    for (int i = 0; i < size; i++) {
-        std::cout << "|";
-        for (int j = 0; j < size; j++) {
-            int el = matrix[i][j];
-            if (el < 10)
-                std::cout << " ";
-            std::cout << el;
-            std::cout << "|";
-        }
-        std::cout << std::endl;
-    }
-}
 
 
 void CreateGridComm();
@@ -52,6 +37,8 @@ int main(int argc, char *argv[]) {
     int **CurA;
     int **CurB; 
     int **CurC;
+    clock_t b, e;
+
     MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &ProcNum);
     MPI_Comm_rank(MPI_COMM_WORLD, &ProcRank);
@@ -88,16 +75,21 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    if (ProcRank == 0)
-    {
-        std::cout<<"Ready..." <<std::endl;
-    }
-
     MPI_Barrier(GridComm);
+    
+    if (ProcRank == 0){
+        b = clock();
+    }
 
     FoxCalculation(SZ, CurA, CurB, CurC);
 
     MPI_Barrier(GridComm);
+
+    if (ProcRank == 0)
+    {
+        e = clock();
+        std::cout << double(e-b)/CLOCKS_PER_SEC << std::endl;
+    }
 
     int *VecC = new int[SZ * SZ];
     int *CurBuff = new int[BlockSize * BlockSize];
@@ -109,29 +101,19 @@ int main(int argc, char *argv[]) {
     if (ProcRank == 0) {
         int k = 0;
         int i1, j1;
-        for (int i1 = 0; i1 < GridSize; ++i1)
-            for (int j1 = 0; j1 < GridSize; ++j1)
-                for (i = i1 * BlockSize; i < i1 * BlockSize + BlockSize; ++i)
+        for (i1 = 0; i1 < GridSize; ++i1) {
+            for (j1 = 0; j1 < GridSize; ++j1) {
+                for (i = i1 * BlockSize; i < i1 * BlockSize + BlockSize; ++i) {
                     for (j = j1 * BlockSize; j < j1 * BlockSize + BlockSize; ++j) {
                         MatrixC[i * SZ + j] = VecC[k];
                         k++;
                     }
-
-        std::cout << "Fox result check:";
-
-        // get away when testing
-        //PrintPackedMatrix(MatrixC, SZ);
-        int **C = TestSingleThread();
-        for(i = 0; i < SZ; ++i)
-            for(j = 0;j < SZ; ++j)
-            {
-                if(C[i][j]!=MatrixC[i*SZ+j])
-                {
-                    std::cout << "ERROR!" <<std::endl;
-                    exit(1);
                 }
             }
-        std::cout << "OK" << std::endl;
+        }
+
+
+
     }
 
     MPI_Finalize();
@@ -154,30 +136,6 @@ void CreateGridComm() {
     SubDims[0] = 1;
     SubDims[1] = 0;
     MPI_Cart_sub(GridComm, SubDims, &(ColComm));
-}
-
-int** TestSingleThread()
-{
-    int **TestMatrixC, **TestMatrixA, **TestMatrixB;
-    TestMatrixA = new int*[SZ];
-    TestMatrixB = new int*[SZ];
-    TestMatrixC = new int*[SZ];
-    for(int i = 0; i < SZ; ++i) {
-        TestMatrixA[i] = new int[SZ];
-        TestMatrixB[i] = new int[SZ];
-        TestMatrixC[i] = new int[SZ];
-    }
-    for (int i = 0; i < SZ; ++i)
-        for (int j = 0; j < SZ; ++j) {
-            TestMatrixA[i][j] = MatrixA[i][j];
-            TestMatrixB[i][j] = MatrixB[i][j];
-            TestMatrixC[i][j] = 0;
-        }
-    BlockMult(TestMatrixA, TestMatrixB, TestMatrixC, SZ);
-
-    std::cout << "Local result:" << std::endl;
-    PrintMatrix(TestMatrixC, SZ);
-    return TestMatrixC;
 }
 
 void FoxCalculation(int Size, int **a, int **b, int **c) {
