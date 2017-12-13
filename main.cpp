@@ -44,15 +44,17 @@ int main(int argc, char *argv[]) {
     BlockSize = SZ / GridSize;
 
     CreateGridComm();
+
+    int i0 = GridCoords[0] * BlockSize;
+    int j0 = GridCoords[1] * BlockSize;
+
+    
     for (i = 0; i < SZ; ++i) {
         for (j = 0; j < SZ; ++j) {
             MatrixA[i][j] = rand() % 70;
             MatrixB[i][j] = rand() % 70;
         }
     }
-
-    int base_row = GridCoords[0] * BlockSize;
-    int base_col = GridCoords[1] * BlockSize;
 
     CurA = new int*[SZ];
     CurB = new int*[SZ];
@@ -65,11 +67,11 @@ int main(int argc, char *argv[]) {
         CurC[i] = new int[SZ];
     }
 
-    for (i = base_row; i < base_row + BlockSize; ++i) {
-        for (j = base_col; j < base_col + BlockSize; ++j) {
-            CurA[i - (base_row)][j - (base_col)] = MatrixA[i][j];
-            CurB[i - (base_row)][j - (base_col)] = MatrixB[i][j];
-            CurC[i - (base_row)][j - (base_col)] = 0;
+    for (i = 0; i < BlockSize; ++i) {
+        for (j = 0; j < BlockSize; ++j) {
+            CurA[i][j] = MatrixA[i+i0][j+j0];
+            CurB[i][j] = MatrixB[i+i0][j+j0];
+            CurC[i][j] = 0;
         }
     }
 
