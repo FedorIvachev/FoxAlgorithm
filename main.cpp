@@ -4,7 +4,7 @@
 #include <ctime>
 #include <math.h>
 
-#define SZ 16
+#define SZ 1024
 
 int MatrixA[SZ][SZ];
 int MatrixB[SZ][SZ];
